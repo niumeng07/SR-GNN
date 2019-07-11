@@ -13,7 +13,6 @@ import pickle
 import operator
 import datetime
 import os, sys
-import pdb
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', default='sample', help='dataset name: diginetica/yoochoose/sample')

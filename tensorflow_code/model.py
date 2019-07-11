@@ -54,13 +54,13 @@ class Model(object):
             self.B = tf.get_variable('B', [2 * self.out_size, self.out_size],
                                      initializer=tf.random_uniform_initializer(-self.stdv, self.stdv))
             y1 = tf.matmul(ma, self.B)
-            logits = tf.matmul(y1, b, transpose_b=True)
+            logits = tf.matmul(y1, b, transpose_b=True) #z  公式(8)
         else:
             ma = tf.reduce_sum(tf.reshape(
                 coef, [self.batch_size, -1, 1]) * seq_h, 1)
             logits = tf.matmul(ma, b, transpose_b=True)
         loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
-            labels=self.tar - 1, logits=logits))
+            labels=self.tar - 1, logits=logits)) #self.tar=y, logits为y^取softmax之前
         self.vars = tf.trainable_variables()
         if train:
             lossL2 = tf.add_n([tf.nn.l2_loss(v) for v in self.vars if v.name not in [

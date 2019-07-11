@@ -55,6 +55,7 @@ print(opt)
 best_result = [0, 0]
 best_epoch = [0, 0]
 test_scores_ = []
+test_item_ = []
 for epoch in range(opt.epoch):
     print('epoch: ', epoch, '===========================================')
     slices = train_data.generate_batch(model.batch_size) #list[ndarray]
@@ -71,13 +72,18 @@ for epoch in range(opt.epoch):
     model.save()
     print('start predicting: ', datetime.datetime.now())
     hit, mrr, test_loss_, test_scores_ = [], [], [], []
+    test_item_ = []
     for i, j in zip(slices, np.arange(len(slices))):
         adj_in, adj_out, alias, item, mask, targets = test_data.get_slice(i)
+        test_item_.append(item)
         scores, test_loss = model.run([model.score_test, model.loss_test], targets, item, adj_in, adj_out, alias,  mask)
         test_loss_.append(test_loss)
         test_scores_.append(scores)
-        index = np.argsort(scores, 1)[:, -20:]
+        index = np.argsort(scores, 1)[:, -20:] #取概率最高的20个,只要这20个命中了target就算命中
         for score, target in zip(index, targets):
+            ## np.isin(a, b) a的元素是否包含于b. a和b可退化为标量
+            # sample: np.isin([1,2], [1,3]) returns array([True, False])
+            # print(target, score) #real_target, 预估概率最高的20项
             hit.append(np.isin(target - 1, score))
             if len(np.where(score == target - 1)[0]) == 0:
                 mrr.append(0)
@@ -92,8 +98,6 @@ for epoch in range(opt.epoch):
     if mrr >= best_result[1]:
         best_result[1] = mrr
         best_epoch[1]=epoch
-    print('train_loss:\t%.4f\ttest_loss:\t%4f\tRecall@20:\t%.4f\tMMR@20:\t%.4f\tEpoch:\t%d,\t%d'%
+    #Recall和Mrr都为*100之后的
+    print('train_loss: %.4f\ttest_loss: %4f\tRecall@20: %.4f\tMMR@20: %.4f\tEpoch: %d\t%d.'%
           (loss, test_loss, best_result[0], best_result[1], best_epoch[0], best_epoch[1]))
-#test_scores_: list[item]
-#item: ndarray, len=309(n_node-1), 即候选个数, 给出每个候选的概率
-print('test_scores:', [(item.index(max(item)), max(item)) for item in [item.tolist() for item in test_scores_][0]]) #第一维是1
